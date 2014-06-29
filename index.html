@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Threejs Game</title>
+		<link href="src/css/main.css" media="all" rel="stylesheet" type="text/css">
+	</head>
+	<body>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
+		<script src="src/js/three.min.js"></script>
+		<script src="src/js/cannon.min.js"></script>
+		<script src="src/js/threejs/loaders/MTLLoader.js"></script>
+		<script src="src/js/threejs/loaders/OBJLoader.js"></script>
+		<script src="src/js/threejs/loaders/OBJMTLLoader.js"></script>
+		<script src="src/js/threejs/controls/PointerLockControls.js"></script>
+		<script src="src/js/threejs/libs/stats.min.js"></script>
+
+		<div id="blocker">
+
+			<div id="instructions">
+				<span style="font-size:40px">Click to play</span>
+				<br />
+				(Z, Q, S, D = Move, SPACE = Jump, MOUSE = Look around)
+			</div>
+
+		</div>
+
+		<script>
+			var DISTANCE = 6;
+			var camera, scene, renderer, stats;
+			var controls;
+			var time;
+
+			var objects = [];
+
+			var rays = [
+			    new THREE.Vector3(0, 0, 1),
+			    new THREE.Vector3(1, 0, 1),
+			    new THREE.Vector3(1, 0, 0),
+		        new THREE.Vector3(1, 0, -1),
+	   	        new THREE.Vector3(0, 0, -1),
+			    new THREE.Vector3(-1, 0, -1),
+			    new THREE.Vector3(-1, 0, 0),
+			    new THREE.Vector3(-1, 0, 1)
+		    ];
+
+			var blocker = document.getElementById( 'blocker' );
+			var instructions = document.getElementById( 'instructions' );
+
+			pointerLockInit();
+			init();
+			animate();
+
+			function init() {
+
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				// camera
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
+
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				// scene
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				scene = new THREE.Scene();
+				scene.fog = new THREE.Fog( 0xffffff, 0 );
+
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				// lights
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				var light = new THREE.DirectionalLight( 0xffffff );
+				light.position.set( 200, 200, 0 );
+				light.target.position.set( 0, 0, -100 );
+				light.castShadow = true;
+				light.shadowDarkness = 0.5;
+				light.shadowCameraNear = 0.01;
+				light.shadowCameraVisible = true;
+				scene.add( light );
+
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				// controls
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				controls = new THREE.PointerLockControls( camera );
+				scene.add( controls.getObject() );
+
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				// floor
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				createFloor();
+
+				function createFloor()
+				{
+					var geometry = new THREE.PlaneGeometry( 500, 500, 20, 20 );
+					geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
+
+					for ( var i = 0, l = geometry.vertices.length; i < l; i ++ ) {
+						var vertex = geometry.vertices[ i ];
+						vertex.x += Math.random() * 20 - 10;
+						vertex.y += Math.random() * 2;
+						vertex.z += Math.random() * 20 - 10;
+					}
+
+					var texture = THREE.ImageUtils.loadTexture('src/textures/terrain/grasslight-big.jpg');
+					texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+					texture.repeat.set( 20, 20 );
+					var texture_nm = THREE.ImageUtils.loadTexture('src/textures/terrain/grasslight-big-nm.jpg');
+					texture_nm.wrapS = texture_nm.wrapT = THREE.RepeatWrapping;
+					texture_nm.repeat.set( 20, 20 );
+
+					var material = new THREE.MeshPhongMaterial({ 
+						shininess: 2, 
+						specular: 0x888888,
+						shading: THREE.SmoothShading,
+						map: texture,
+						normalMap: texture_nm
+					});
+
+					var mesh = new THREE.Mesh( geometry, material );
+					mesh.receiveShadow = true;
+					mesh.castShadow = false;
+					mesh.flipSided = false;
+					mesh.position.set( 0, 0, 0 );
+					scene.add( mesh );
+					objects.push( mesh );
+				}
+
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				// objects
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				addJsonOBJ( 'src/models/building2/building2.js', -100, 0, -200, 100, 0);
+				addJsonOBJ( 'src/models/building9/building9.js', 80, 0, -140, 100, 190);
+				
+				function addJsonOBJ( path, x, y, z, scale, angle)
+				{
+					var loader = new THREE.JSONLoader();
+					loader.load( path, function ( geometry, materials ) {
+						mesh = new THREE.Mesh( geometry, new THREE.MeshFaceMaterial( materials ) );
+						mesh.position.set( x, y, z );
+						mesh.rotation.y = - Math.PI * angle / 180;
+						mesh.scale.set( scale, scale, scale );
+						mesh.castShadow = true;
+						mesh.receiveShadow = true;
+						scene.add( mesh );
+						objects.push( mesh );
+					});
+				}
+
+				function addOBJMTL( pathOBJ, pathMTL, x, y, z, scale )
+				{
+					var loader = new THREE.OBJMTLLoader();
+					loader.load( pathOBJ, pathMTL, function ( object ) {
+						object.position.set( x, y, z );
+						object.scale.set( scale, scale, scale );
+						object.castShadow = true;
+						object.receiveShadow = true;
+						scene.add( object );
+						objects.push( object );
+					});
+				}
+
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				// stats
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				stats = new Stats();
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.bottom = '0px';
+				document.body.appendChild(stats.domElement);
+
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				// renderer
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				renderer = new THREE.WebGLRenderer({ antialias: true });
+				renderer.shadowMapEnabled = true;
+				renderer.shadowMapSoft = true;
+				renderer.shadowCameraNear = 3;
+				renderer.shadowCameraFar = camera.far;
+				renderer.shadowCameraFov = 50;
+				renderer.shadowMapBias = 0.0039;
+				renderer.shadowMapDarkness = 0.5;
+				renderer.shadowMapWidth = 1024;
+				renderer.shadowMapHeight = 1024;
+				renderer.setClearColor( 0xffffff );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );
+				window.addEventListener( 'resize', onWindowResize, false );
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function animate()
+			{
+				detectCollision();
+				rayIntersect();
+
+				var delta = (Date.now() - time) * 2;
+				controls.update(delta);
+
+				stats.update();
+				renderer.render(scene, camera);
+				time = Date.now();
+
+				requestAnimationFrame(animate);
+			}
+
+			function rayIntersect() {
+				controls.isOnObject( false );
+				var raycaster = new THREE.Raycaster();
+				raycaster.ray.direction.set( 0, -1, 0 );
+				raycaster.ray.origin.copy( controls.getObject().position );
+				raycaster.ray.origin.y -= 10;
+				var intersections = raycaster.intersectObjects( objects );
+				if ( intersections.length > 0 ) {
+					var distance = intersections[ 0 ].distance;
+					if ( distance > 0 && distance < DISTANCE ) {
+						controls.isOnObject( true );
+					}
+				}
+			}
+
+			function detectCollision() {
+				unlockAllDirection();
+				
+				var rotationMatrix;
+				var cameraDirection = controls.getDirection(new THREE.Vector3(0, 0, 0)).clone();
+				
+				if (controls.moveForward()) {
+					// Nothing to do!
+				}
+				else if (controls.moveBackward()) {
+					rotationMatrix = new THREE.Matrix4();
+					rotationMatrix.makeRotationY(180 * Math.PI / 180);
+				}
+				else if (controls.moveLeft()) {
+					rotationMatrix = new THREE.Matrix4();
+					rotationMatrix.makeRotationY(90 * Math.PI / 180);
+				}
+				else if (controls.moveRight()) {
+					rotationMatrix = new THREE.Matrix4();
+					rotationMatrix.makeRotationY((360-90) * Math.PI / 180);
+				}
+				else return;
+				
+				if (rotationMatrix !== undefined){
+					cameraDirection.applyMatrix4(rotationMatrix);
+				}
+
+				var rayCaster = new THREE.Raycaster(controls.getObject().position, cameraDirection);
+				for (i = 0; i < objects.length; i++) {
+					var intersects = rayCaster.intersectObject(objects[i], true);	
+					
+					if (intersects.length > 0) {
+						if (intersects[0].distance < DISTANCE) {
+							lockDirection();
+							console.log("Collision detected @ " + intersects[0].distance);
+						}	
+					} 
+				}
+			}
+
+			function lockDirection() {
+				if (controls.moveForward()) {
+					controls.lockMoveForward(true);
+				}
+				else if (controls.moveBackward()) {
+					controls.lockMoveBackward(true);
+				}
+				else if (controls.moveLeft()) {
+					controls.lockMoveLeft(true);
+				}
+				else if (controls.moveRight()) {
+					controls.lockMoveRight(true);
+				}
+			}
+
+			function unlockAllDirection(){
+				controls.lockMoveForward(false);
+				controls.lockMoveBackward(false);
+				controls.lockMoveLeft(false);
+				controls.lockMoveRight(false);
+			}
+
+
+			function pointerLockInit()
+			{
+				// http://www.html5rocks.com/en/tutorials/pointerlock/intro/
+
+				var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
+
+				if ( havePointerLock ) {
+
+					var element = document.body;
+
+					var pointerlockchange = function ( event ) {
+
+						if ( document.pointerLockElement === element || document.mozPointerLockElement === element || document.webkitPointerLockElement === element ) {
+
+							controls.enabled = true;
+
+							blocker.style.display = 'none';
+
+						} else {
+
+							controls.enabled = false;
+
+							blocker.style.display = '-webkit-box';
+							blocker.style.display = '-moz-box';
+							blocker.style.display = 'box';
+
+							instructions.style.display = '';
+
+						}
+
+					}
+
+					var pointerlockerror = function ( event ) {
+
+						instructions.style.display = '';
+
+					}
+
+					// Hook pointer lock state change events
+					document.addEventListener( 'pointerlockchange', pointerlockchange, false );
+					document.addEventListener( 'mozpointerlockchange', pointerlockchange, false );
+					document.addEventListener( 'webkitpointerlockchange', pointerlockchange, false );
+
+					document.addEventListener( 'pointerlockerror', pointerlockerror, false );
+					document.addEventListener( 'mozpointerlockerror', pointerlockerror, false );
+					document.addEventListener( 'webkitpointerlockerror', pointerlockerror, false );
+
+					instructions.addEventListener( 'click', function ( event ) {
+
+						instructions.style.display = 'none';
+
+						// Ask the browser to lock the pointer
+						element.requestPointerLock = element.requestPointerLock || element.mozRequestPointerLock || element.webkitRequestPointerLock;
+
+						if ( /Firefox/i.test( navigator.userAgent ) ) {
+
+							var fullscreenchange = function ( event ) {
+
+								if ( document.fullscreenElement === element || document.mozFullscreenElement === element || document.mozFullScreenElement === element ) {
+
+									document.removeEventListener( 'fullscreenchange', fullscreenchange );
+									document.removeEventListener( 'mozfullscreenchange', fullscreenchange );
+
+									element.requestPointerLock();
+								}
+
+							}
+
+							document.addEventListener( 'fullscreenchange', fullscreenchange, false );
+							document.addEventListener( 'mozfullscreenchange', fullscreenchange, false );
+
+							element.requestFullscreen = element.requestFullscreen || element.mozRequestFullscreen || element.mozRequestFullScreen || element.webkitRequestFullscreen;
+
+							element.requestFullscreen();
+
+						} else {
+
+							element.requestPointerLock();
+
+						}
+
+					}, false );
+
+				} else {
+
+					instructions.innerHTML = 'Your browser doesn\'t seem to support Pointer Lock API';
+
+				}
+			}
+
+		</script>
+	</body>
+</html>
