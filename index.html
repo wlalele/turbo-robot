@@ -75,7 +75,7 @@
                 else
                     world.solver = solver;
 
-                world.gravity.set( 0, -20, 0);
+                world.gravity.set( 0, -9.78, 0);
                 world.broadphase = new CANNON.NaiveBroadphase();
 
                 // Create a slippery material (friction coefficient = 0.0)
@@ -89,10 +89,10 @@
                 world.addContactMaterial(physicsContactMaterial);
 
                 // Create a sphere
-                var mass = 5, radius = 1.3;
+                var mass = 150, radius = 1.3;
                 sphereShape = new CANNON.Sphere(radius);
                 sphereBody = new CANNON.RigidBody(mass,sphereShape,physicsMaterial);
-                sphereBody.position.set(0,5,0);
+                sphereBody.position.set( 0, 5, 0 );
                 sphereBody.linearDamping = 0.9;
                 world.add(sphereBody);
 
@@ -178,9 +178,9 @@
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				// objects
 				////////////////////////////////////////////////////////////////////////////////////////////////
-				//addJsonOBJ( 'src/models/building2/building2.js', -100, 0, -200, 100, 0);
-				//addJsonOBJ( 'src/models/building9/building9.js', 80, 0, -140, 100, 190);
-				//addJsonOBJ( 'src/models/vehicules/tank/t55/t55.js', 50, 1, -50, 0.2, 100);
+				addJsonOBJ( 'src/models/building2/building2.js', -10, 0, -20, 10, 0);
+				addJsonOBJ( 'src/models/building9/building9.js', 8, 0, -14, 10, 190);
+				addJsonOBJ( 'src/models/vehicules/tank/t55/t55.js', 20, 0, 20, 0.02, 100);
 				
 				function addJsonOBJ( path, x, y, z, scale, angle)
 				{
@@ -212,25 +212,31 @@
 					});
 				}
 
-				// Add boxes
-                var halfExtents = new CANNON.Vec3(1,1,1);
-                var boxShape = new CANNON.Box(halfExtents);
-                var boxGeometry = new THREE.BoxGeometry(halfExtents.x*2,halfExtents.y*2,halfExtents.z*2);
-                for(var i=0; i<7; i++){
-                    var x = (Math.random()-0.5)*20;
-                    var y = 1 + (Math.random()-0.5)*1;
-                    var z = (Math.random()-0.5)*20;
-                    var boxBody = new CANNON.RigidBody(5,boxShape);
+				function addBox()
+                {
+                	var x = ( Math.random() - 0.5 ) * 20;
+                    var y = 1 + ( Math.random() - 0.5 ) * 1;
+                    var z = ( Math.random() - 0.5 ) * 20;
+                    var boxBody = new CANNON.RigidBody( 5, boxShape );
                     var boxMesh = new THREE.Mesh( boxGeometry, material );
-                    world.add(boxBody);
-                    scene.add(boxMesh);
-                    boxBody.position.set(x,y,z);
-                    boxMesh.position.set(x,y,z);
+                    world.add( boxBody );
+                    scene.add( boxMesh );
+                    boxBody.position.set( x, y, z );
+                    boxMesh.position.set( x, y, z );
                     boxMesh.castShadow = true;
                     boxMesh.receiveShadow = true;
-                    boxes.push(boxBody);
-                    boxMeshes.push(boxMesh);
+                    boxes.push( boxBody );
+                    boxMeshes.push( boxMesh );
                 }
+
+				// Add boxes
+                var halfExtents = new CANNON.Vec3( 1, 1, 1);
+                var boxShape = new CANNON.Box( halfExtents );
+                var boxGeometry = new THREE.BoxGeometry( halfExtents.x * 2, halfExtents.y * 2, halfExtents.z * 2 );
+                for ( var i = 0; i < 7; i++ ) {
+                 	addBox();
+                }
+
 
                 // Add linked boxes
                 var size = 0.5;
@@ -331,7 +337,7 @@
             var ballShape = new CANNON.Sphere( 0.2 );
             var ballGeometry = new THREE.SphereGeometry( ballShape.radius );
             var shootDirection = new THREE.Vector3();
-            var shootVelo = 50;
+            var shootVelo = 20;
             var projector = new THREE.Projector();
 
             function getShootDir ( targetVec )
