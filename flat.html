@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Threejs Game</title>
+		<link href="src/css/main.css" media="all" rel="stylesheet" type="text/css">
+	</head>
+	<body>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
+		<script src="src/js/three.min.js"></script>
+		<script src="src/js/threejs/loaders/MTLLoader.js"></script>
+		<script src="src/js/threejs/loaders/OBJLoader.js"></script>
+		<script src="src/js/threejs/loaders/OBJMTLLoader.js"></script>
+		<script src="src/js/threejs/controls/PointerLockControls.js"></script>
+		<script src="src/js/threejs/libs/stats.min.js"></script>
+
+		<div id="blocker">
+
+			<div id="instructions">
+				<span style="font-size:40px">Click to play</span>
+				<br />
+				(Z, Q, S, D = Move, SPACE = Jump, MOUSE = Look around)
+			</div>
+
+		</div>
+
+		<script>
+			var DISTANCE = 6;
+			var camera, scene, renderer, stats;
+			var controls;
+			var directional_light;
+			var time;
+
+			var objects = [];
+
+			var player = new THREE.Object3D();
+			var rays = [
+			    new THREE.Vector3(0, 0, 1),
+			    new THREE.Vector3(1, 0, 1),
+			    new THREE.Vector3(1, 0, 0),
+		        new THREE.Vector3(1, 0, -1),
+	   	        new THREE.Vector3(0, 0, -1),
+			    new THREE.Vector3(-1, 0, -1),
+			    new THREE.Vector3(-1, 0, 0),
+			    new THREE.Vector3(-1, 0, 1)
+		    ];
+
+		    var caster = new THREE.Raycaster();
+
+			var blocker = document.getElementById( 'blocker' );
+			var instructions = document.getElementById( 'instructions' );
+
+			pointerLockInit();
+			init();
+			animate();
+
+			function init() {
+
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				// camera
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
+
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				// scene
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				scene = new THREE.Scene();
+				scene.fog = new THREE.Fog( 0xffffff, 0 );
+
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				// skybox
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				var skybox_geometry = new THREE.BoxGeometry( 500, 500, 500 );
+				var skybox_material = new THREE.MeshBasicMaterial( { color: 0x9999ff, side: THREE.BackSide } );
+				var skybox = new THREE.Mesh( skybox_geometry, skybox_material );
+				//scene.add(skybox);
+
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				// directional light
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				directional_light = new THREE.DirectionalLight( 0xffffff );
+				directional_light.position.set( 200, 100, 0 );
+				directional_light.target.position.set( 20, 0, 0 );
+				directional_light.castShadow = true;
+				directional_light.shadowDarkness = 0.5;
+				//directional_light.shadowCameraNear = 0.01;
+				directional_light.shadowCameraVisible = true;
+
+				directional_light.shadowMapWidth = directional_light.shadowMapHeight = 2048;
+			    directional_light.shadowCameraNear = 150;
+			    directional_light.shadowCameraFar = 280;
+			    directional_light.shadowCameraLeft = -60;
+			    directional_light.shadowCameraRight = 60;
+			    directional_light.shadowCameraTop = 60;
+			    directional_light.shadowCameraBottom = -60;
+
+				scene.add( directional_light );
+
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				// lights
+				////////////////////////////////////////////////////////////////////////////////////////////////
+      			makePointLights( 12 );
+
+      			function makePointLights( height )
+      			{
+	      			//Red Light
+	      			var light = new THREE.PointLight( 0xff0000, 1, 100 );
+					light.position.set( 30, height, 0 );
+					scene.add( light );
+					//Red Light
+	      			var light = new THREE.PointLight( 0xff0000, 1, 100 );
+					light.position.set( 30, height, 30 );
+					scene.add( light );
+					//Red Light
+	      			var light = new THREE.PointLight( 0xff0000, 1, 100 );
+					light.position.set( 30, height, -30 );
+					scene.add( light );
+					
+					//Green Light
+					var light = new THREE.PointLight( 0x00ff00, 1, 100 );
+					light.position.set( 0, height, 0 );
+					scene.add( light );
+
+					//Blue Light
+					var light = new THREE.PointLight( 0x0000ff, 1, 100 );
+					light.position.set( -30, height, 0 );
+					scene.add( light );
+					//Blue Light
+					var light = new THREE.PointLight( 0x000ff0, 1, 100 );
+					light.position.set( -30, height, 30 );
+					scene.add( light );
+					//Blue Light
+					var light = new THREE.PointLight( 0x000ff0, 1, 100 );
+					light.position.set( -30, height, -30 );
+					scene.add( light );
+      			}
+
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				// controls
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				controls = new THREE.PointerLockControls( camera );
+				scene.add( controls.getObject() );
+
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				// floor
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				createFloor();
+
+				function createFloor()
+				{
+					var geometry = new THREE.PlaneGeometry( 100, 100, 1, 1 );
+					geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
+
+					var texture = THREE.ImageUtils.loadTexture('src/textures/terrain/grasslight-big.jpg');
+					//var texture = THREE.ImageUtils.loadTexture('src/textures/ground/wood_diffuse.jpg');
+					texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+					texture.repeat.set( 4, 4 );
+					
+					var texture_normal = THREE.ImageUtils.loadTexture('src/textures/terrain/grasslight-big-nm.jpg');
+					//var texture_normal = THREE.ImageUtils.loadTexture('src/textures/ground/wood_normal.jpg');
+					texture_normal.wrapS = texture_normal.wrapT = THREE.RepeatWrapping;
+					texture_normal.repeat.set( 4, 4 );
+					
+					var material = new THREE.MeshPhongMaterial({ 
+						shininess: 2, 
+						specular: 0x111111,
+						shading: THREE.SmoothShading,
+						map: texture,
+						normalMap: texture_normal,
+						wireframe: false
+					});
+
+					var mesh = new THREE.Mesh( geometry, material );
+					mesh.receiveShadow = true;
+					mesh.castShadow = false;
+					mesh.flipSided = false;
+					mesh.position.set( 0, 0, 0 );
+					scene.add( mesh );
+					objects.push( mesh );
+				}
+
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				// ceiling
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				createCeiling();
+
+				function createCeiling()
+				{
+					var geometry = new THREE.PlaneGeometry( 100, 100, 1, 1 );
+					geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
+
+					var material = new THREE.MeshPhongMaterial({ 
+						specular: 0x111111,
+						shading: THREE.SmoothShading,
+						side: THREE.DoubleSide,
+						wireframe: false
+					});
+
+					var mesh = new THREE.Mesh( geometry, material );
+					mesh.receiveShadow = true;
+					mesh.castShadow = false;
+					mesh.flipSided = false;
+					mesh.position.set( 0, 20, 0 );
+					scene.add( mesh );
+					objects.push( mesh );
+				}
+
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				// objects
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				addJsonOBJ( 'src/models/flat.js', 0, 0, 0, 10, 0);
+				//objects[2].material.materials[0].wireframe = true
+				function addJsonOBJ( path, x, y, z, scale, angle)
+				{
+					var loader = new THREE.JSONLoader();
+					loader.load( path, function ( geometry, materials ) {
+						mesh = new THREE.Mesh( geometry, new THREE.MeshFaceMaterial( materials ) );
+						mesh.position.set( x, y, z );
+						mesh.rotation.y = - Math.PI * angle / 180;
+						mesh.scale.set( scale, scale, scale );
+						mesh.castShadow = true;
+						mesh.receiveShadow = true;
+						scene.add( mesh );
+						objects.push( mesh );
+					});
+				}
+
+				
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				// stats
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				stats = new Stats();
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.bottom = '0px';
+				document.body.appendChild(stats.domElement);
+
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				// renderer
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				renderer = new THREE.WebGLRenderer({ antialias: true });
+				renderer.shadowMapEnabled = true;
+				renderer.shadowMapSoft = true;
+				renderer.shadowCameraNear = 3;
+				renderer.shadowCameraFar = camera.far;
+				renderer.shadowCameraFov = 50;
+				renderer.shadowMapBias = 0.0039;
+				renderer.shadowMapDarkness = 0.5;
+				renderer.shadowMapWidth = 1024;
+				renderer.shadowMapHeight = 1024;
+				renderer.setClearColor( 0xffffff );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );
+				window.addEventListener( 'resize', onWindowResize, false );
+			}
+
+			function onWindowResize() 
+			{
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+			}
+
+			function animate()
+			{
+				detectCollision();
+				//rayIntersect();
+
+				var delta = (Date.now() - time) * 2;
+				controls.update(delta);
+
+				stats.update();
+				renderer.render(scene, camera);
+				time = Date.now();
+
+				requestAnimationFrame(animate);
+			}
+
+			function rayIntersect() 
+			{
+				controls.isOnObject( false );
+
+				var raycaster = new THREE.Raycaster();
+				raycaster.ray.direction.set( 0, -1, 0 );
+				raycaster.ray.origin.copy( controls.getObject().position );
+				raycaster.ray.origin.y -= 10;
+
+				var intersections = raycaster.intersectObjects( objects );
+				if ( intersections.length > 0 ) {
+					var distance = intersections[ 0 ].distance;
+					if ( distance > 0 && distance < DISTANCE ) {
+						controls.isOnObject( true );
+					}
+				}
+			}
+
+			function detectCollision() 
+			{
+				unlockDirections();
+				
+				var rotationMatrix;
+				var cameraDirection = controls.getDirection(new THREE.Vector3(0, 0, 0)).clone();
+				
+				if (controls.moveForward()) {
+					// Nothing to do!
+				} else if (controls.moveBackward()) {
+					rotationMatrix = new THREE.Matrix4();
+					rotationMatrix.makeRotationY(180 * Math.PI / 180);
+				} else if (controls.moveLeft()) {
+					rotationMatrix = new THREE.Matrix4();
+					rotationMatrix.makeRotationY(90 * Math.PI / 180);
+				} else if (controls.moveRight()) {
+					rotationMatrix = new THREE.Matrix4();
+					rotationMatrix.makeRotationY((360-90) * Math.PI / 180);
+				} else return;
+				
+				if (rotationMatrix !== undefined){
+					cameraDirection.applyMatrix4(rotationMatrix);
+				}
+
+				var collisions, i;
+
+				//var rayCaster = new THREE.Raycaster(controls.getObject().position, cameraDirection);
+				//for (i = 0; i < objects.length; i++) {
+				for ( i = 0; i < rays.length; i++ ) {
+
+					// We reset the raycaster to this direction
+			        //caster.set(player.position, this.rays[i]);
+			        caster.set(controls.getObject().position, cameraDirection);
+			        // Test if we intersect with any obstacle mesh
+			        collisions = caster.intersectObjects(objects);
+
+					//var intersects = rayCaster.intersectObject(objects[i], true);	
+					
+					//if (intersects.length > 0 && intersects[0].distance < DISTANCE) {
+					if (collisions.length > 0 && collisions[0].distance <= DISTANCE) {
+						lockDirections();
+						console.log("Collision detected @ " + collisions[0].distance);	
+					} 
+				}
+			}
+
+			function lockDirections() 
+			{
+				if (controls.moveForward()) {
+					controls.lockMoveForward(true);
+				}
+				else if (controls.moveBackward()) {
+					controls.lockMoveBackward(true);
+				}
+				else if (controls.moveLeft()) {
+					controls.lockMoveLeft(true);
+				}
+				else if (controls.moveRight()) {
+					controls.lockMoveRight(true);
+				}
+			}
+
+			function unlockDirections()
+			{
+				controls.lockMoveForward(false);
+				controls.lockMoveBackward(false);
+				controls.lockMoveLeft(false);
+				controls.lockMoveRight(false);
+			}
+
+
+			function pointerLockInit()
+			{
+				// http://www.html5rocks.com/en/tutorials/pointerlock/intro/
+
+				var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
+
+				if ( havePointerLock ) {
+
+					var element = document.body;
+
+					var pointerlockchange = function ( event ) {
+
+						if ( document.pointerLockElement === element || document.mozPointerLockElement === element || document.webkitPointerLockElement === element ) {
+
+							controls.enabled = true;
+
+							blocker.style.display = 'none';
+
+						} else {
+
+							controls.enabled = false;
+
+							blocker.style.display = '-webkit-box';
+							blocker.style.display = '-moz-box';
+							blocker.style.display = 'box';
+
+							instructions.style.display = '';
+
+						}
+
+					}
+
+					var pointerlockerror = function ( event ) {
+
+						instructions.style.display = '';
+
+					}
+
+					// Hook pointer lock state change events
+					document.addEventListener( 'pointerlockchange', pointerlockchange, false );
+					document.addEventListener( 'mozpointerlockchange', pointerlockchange, false );
+					document.addEventListener( 'webkitpointerlockchange', pointerlockchange, false );
+
+					document.addEventListener( 'pointerlockerror', pointerlockerror, false );
+					document.addEventListener( 'mozpointerlockerror', pointerlockerror, false );
+					document.addEventListener( 'webkitpointerlockerror', pointerlockerror, false );
+
+					instructions.addEventListener( 'click', function ( event ) {
+
+						instructions.style.display = 'none';
+
+						// Ask the browser to lock the pointer
+						element.requestPointerLock = element.requestPointerLock || element.mozRequestPointerLock || element.webkitRequestPointerLock;
+
+						if ( /Firefox/i.test( navigator.userAgent ) ) {
+
+							var fullscreenchange = function ( event ) {
+
+								if ( document.fullscreenElement === element || document.mozFullscreenElement === element || document.mozFullScreenElement === element ) {
+
+									document.removeEventListener( 'fullscreenchange', fullscreenchange );
+									document.removeEventListener( 'mozfullscreenchange', fullscreenchange );
+
+									element.requestPointerLock();
+								}
+
+							}
+
+							document.addEventListener( 'fullscreenchange', fullscreenchange, false );
+							document.addEventListener( 'mozfullscreenchange', fullscreenchange, false );
+
+							element.requestFullscreen = element.requestFullscreen || element.mozRequestFullscreen || element.mozRequestFullScreen || element.webkitRequestFullscreen;
+
+							element.requestFullscreen();
+
+						} else {
+
+							element.requestPointerLock();
+
+						}
+
+					}, false );
+
+				} else {
+
+					instructions.innerHTML = 'Your browser doesn\'t seem to support Pointer Lock API';
+
+				}
+			}
+
+		</script>
+	</body>
+</html>
