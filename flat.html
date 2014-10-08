@@ -30,6 +30,7 @@
 			var controls;
 			var directional_light;
 			var time;
+			var skybox;
 
 			var objects = [];
 
@@ -70,67 +71,74 @@
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				// skybox
 				////////////////////////////////////////////////////////////////////////////////////////////////
-				var skybox_geometry = new THREE.BoxGeometry( 500, 500, 500 );
-				var skybox_material = new THREE.MeshBasicMaterial( { color: 0x9999ff, side: THREE.BackSide } );
-				var skybox = new THREE.Mesh( skybox_geometry, skybox_material );
-				//scene.add(skybox);
+				//var skybox_geometry = new THREE.SphereGeometry( 200, 32, 32 ); // box 500 500 500
+				var skybox_geometry = new THREE.CylinderGeometry( 5, 5, 20, 32 ); // box 500 500 500
+				var skybox_texture = THREE.ImageUtils.loadTexture('src/textures/skybow.jpg');
+				var skybox_material = new THREE.MeshBasicMaterial({
+					color: 0x9999ff,
+					side: THREE.BackSide,
+					map: skybox_texture,
+					wireframe: false
+				});
+				skybox = new THREE.Mesh( skybox_geometry, skybox_material );
+				skybox.position.set( 0, 10, 0 );
+				scene.add(skybox);
 
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				// directional light
 				////////////////////////////////////////////////////////////////////////////////////////////////
-				directional_light = new THREE.DirectionalLight( 0xffffff );
-				directional_light.position.set( 200, 100, 0 );
-				directional_light.target.position.set( 20, 0, 0 );
+				directional_light = new THREE.DirectionalLight( 0xFFFFFF );
+				directional_light.position.set( 300, 180, 200 );
+				directional_light.target.position.set( 0, 0, 0 );
 				directional_light.castShadow = true;
 				directional_light.shadowDarkness = 0.5;
-				//directional_light.shadowCameraNear = 0.01;
-				directional_light.shadowCameraVisible = true;
+				//directional_light.shadowCameraVisible = true;
 
 				directional_light.shadowMapWidth = directional_light.shadowMapHeight = 2048;
-			    directional_light.shadowCameraNear = 150;
-			    directional_light.shadowCameraFar = 280;
-			    directional_light.shadowCameraLeft = -60;
-			    directional_light.shadowCameraRight = 60;
+			    directional_light.shadowCameraNear = 325;
+			    directional_light.shadowCameraFar = 480;
+			    directional_light.shadowCameraLeft = -80;
+			    directional_light.shadowCameraRight = 80;
 			    directional_light.shadowCameraTop = 60;
-			    directional_light.shadowCameraBottom = -60;
+			    directional_light.shadowCameraBottom = -35;
 
 				scene.add( directional_light );
 
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				// lights
 				////////////////////////////////////////////////////////////////////////////////////////////////
-      			makePointLights( 12 );
+      			makePointLights( 17, 0x999999 );
 
-      			function makePointLights( height )
+      			function makePointLights( height, color )
       			{
 	      			//Red Light
-	      			var light = new THREE.PointLight( 0xff0000, 1, 100 );
+	      			var light = new THREE.PointLight( color, 1, 100 );
 					light.position.set( 30, height, 0 );
 					scene.add( light );
 					//Red Light
-	      			var light = new THREE.PointLight( 0xff0000, 1, 100 );
+	      			var light = new THREE.PointLight( color, 1, 100 );
 					light.position.set( 30, height, 30 );
 					scene.add( light );
 					//Red Light
-	      			var light = new THREE.PointLight( 0xff0000, 1, 100 );
+	      			var light = new THREE.PointLight( color, 1, 100 );
 					light.position.set( 30, height, -30 );
 					scene.add( light );
 					
 					//Green Light
-					var light = new THREE.PointLight( 0x00ff00, 1, 100 );
+					var light = new THREE.PointLight( color, 1, 100 );
 					light.position.set( 0, height, 0 );
 					scene.add( light );
 
 					//Blue Light
-					var light = new THREE.PointLight( 0x0000ff, 1, 100 );
+					var light = new THREE.PointLight( color, 1, 100 );
 					light.position.set( -30, height, 0 );
 					scene.add( light );
 					//Blue Light
-					var light = new THREE.PointLight( 0x000ff0, 1, 100 );
+					var light = new THREE.PointLight( color, 1, 100 );
 					light.position.set( -30, height, 30 );
 					scene.add( light );
 					//Blue Light
-					var light = new THREE.PointLight( 0x000ff0, 1, 100 );
+					var light = new THREE.PointLight( color, 1, 100 );
 					light.position.set( -30, height, -30 );
 					scene.add( light );
       			}
@@ -144,7 +152,7 @@
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				// floor
 				////////////////////////////////////////////////////////////////////////////////////////////////
-				createFloor();
+				//createFloor();
 
 				function createFloor()
 				{
@@ -200,7 +208,7 @@
 					mesh.receiveShadow = true;
 					mesh.castShadow = false;
 					mesh.flipSided = false;
-					mesh.position.set( 0, 20, 0 );
+					mesh.position.set( 0, 19, 0 );
 					scene.add( mesh );
 					objects.push( mesh );
 				}
@@ -220,6 +228,7 @@
 						mesh.scale.set( scale, scale, scale );
 						mesh.castShadow = true;
 						mesh.receiveShadow = true;
+						mesh.flipSided = true;
 						scene.add( mesh );
 						objects.push( mesh );
 					});
