@@ -74,6 +74,7 @@
 				//var skybox_geometry = new THREE.SphereGeometry( 200, 32, 32 ); // box 500 500 500
 				var skybox_geometry = new THREE.CylinderGeometry( 5, 5, 20, 32 ); // box 500 500 500
 				var skybox_texture = THREE.ImageUtils.loadTexture('src/textures/skybow.jpg');
+				//var skybox_texture = THREE.ImageUtils.loadTexture('src/textures/skybox.jpg');
 				var skybox_material = new THREE.MeshBasicMaterial({
 					color: 0x9999ff,
 					side: THREE.BackSide,
@@ -81,7 +82,9 @@
 					wireframe: false
 				});
 				skybox = new THREE.Mesh( skybox_geometry, skybox_material );
-				skybox.position.set( 0, 10, 0 );
+				skybox.scale.set( 25, 25, 25 );
+				skybox.rotation.y = 30;
+				skybox.position.set( 0, 60, 0 );
 				scene.add(skybox);
 
 				////////////////////////////////////////////////////////////////////////////////////////////////
