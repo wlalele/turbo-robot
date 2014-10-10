@@ -31,6 +31,8 @@
 			var directional_light;
 			var time;
 			var skybox;
+			var cubemap ;
+			var sphere;
 
 			var objects = [];
 
@@ -60,7 +62,7 @@
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				// camera
 				////////////////////////////////////////////////////////////////////////////////////////////////
-				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
+				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 3000 );
 
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				// scene
@@ -72,7 +74,7 @@
 				// skybox
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				//var skybox_geometry = new THREE.SphereGeometry( 200, 32, 32 ); // box 500 500 500
-				var skybox_geometry = new THREE.CylinderGeometry( 5, 5, 20, 32 ); // box 500 500 500
+				/*var skybox_geometry = new THREE.CylinderGeometry( 5, 5, 20, 32 ); // box 500 500 500
 				var skybox_texture = THREE.ImageUtils.loadTexture('src/textures/skybow.jpg');
 				//var skybox_texture = THREE.ImageUtils.loadTexture('src/textures/skybox.jpg');
 				var skybox_material = new THREE.MeshBasicMaterial({
@@ -85,6 +87,41 @@
 				skybox.scale.set( 25, 25, 25 );
 				skybox.rotation.y = 30;
 				skybox.position.set( 0, 60, 0 );
+				scene.add(skybox);*/
+
+				var path_to_folder = 'src/textures/skybox/';
+				var urls = [
+				  path_to_folder + 'right.png', // right
+				  path_to_folder + 'left.png', // left
+				  
+				  path_to_folder + 'top.png', // top
+				  path_to_folder + 'bottom.png', // bottom
+				  
+				  path_to_folder + 'front.png', // front
+				  path_to_folder + 'back.png', // back
+				];
+
+				cubemap = THREE.ImageUtils.loadTextureCube(urls); // load textures
+				cubemap.format = THREE.RGBFormat;
+
+				var shader = THREE.ShaderLib['cube']; // init cube shader from built-in lib
+				shader.uniforms['tCube'].value = cubemap; // apply textures to shader*/
+
+				// create shader material
+				var skyBoxMaterial = new THREE.ShaderMaterial( {
+				  fragmentShader: shader.fragmentShader,
+				  vertexShader: shader.vertexShader,
+				  uniforms: shader.uniforms,
+				  depthWrite: false,
+				  side: THREE.BackSide
+				});
+				
+				// create skybox mesh
+				skybox = new THREE.Mesh(
+				  new THREE.CubeGeometry(1500, 1500, 1500),
+				  skyBoxMaterial
+				);
+				skybox.position.y = 0;
 				scene.add(skybox);
 
 				////////////////////////////////////////////////////////////////////////////////////////////////
@@ -110,7 +147,7 @@
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				// lights
 				////////////////////////////////////////////////////////////////////////////////////////////////
-      			makePointLights( 17, 0x999999 );
+      			//makePointLights( 17, 0x999999 );
 
       			function makePointLights( height, color )
       			{
@@ -193,7 +230,7 @@
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				// ceiling
 				////////////////////////////////////////////////////////////////////////////////////////////////
-				createCeiling();
+				//createCeiling();
 
 				function createCeiling()
 				{
@@ -220,6 +257,20 @@
 				// objects
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				addJsonOBJ( 'src/models/flat.js', 0, 0, 0, 10, 0);
+				
+				var reflectionMaterial = new THREE.MeshBasicMaterial({
+		          color: 0xCCCCCC,
+		          envMap: cubemap
+		        });
+
+		        sphere = new THREE.Mesh(
+		          new THREE.SphereGeometry(2,32,32),
+		          reflectionMaterial
+		        );
+
+		        sphere.position.set(25,5,0);
+		        scene.add(sphere);
+				
 				//objects[2].material.materials[0].wireframe = true
 				function addJsonOBJ( path, x, y, z, scale, angle)
 				{
@@ -284,6 +335,16 @@
 				renderer.render(scene, camera);
 				time = Date.now();
 
+				if (controls.getObject().position.x > 50) {
+					controls.getObject().position.y -=  1 + Math.abs(controls.getObject().position.y / 10);
+					controls.enabled = false;
+					if (controls.getObject().position.y < -1500) {
+						renderer.setClearColor(0xff0000, 1);
+						controls.getObject().position.x = 0;
+						controls.getObject().position.y = 0;
+						controls.enabled = true;
+					}
+				}
 				requestAnimationFrame(animate);
 			}
 
@@ -330,6 +391,8 @@
 				}
 
 				var collisions, i;
+
+				//sphere.material.
 
 				//var rayCaster = new THREE.Raycaster(controls.getObject().position, cameraDirection);
 				//for (i = 0; i < objects.length; i++) {
