@@ -52,7 +52,7 @@
 		"colorSpecular" : [0.5, 0.5, 0.5],
 		"depthTest" : true,
 		"depthWrite" : true,
-		"mapDiffuse" : "wooden_floor.jpg",
+		"mapDiffuse" : "tex/wooden_floor.jpg",
 		"mapDiffuseRepeat" : [6, 6],
 		"mapDiffuseWrap" : ["repeat", "repeat"],
 		"shading" : "Phong",

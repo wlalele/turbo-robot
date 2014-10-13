@@ -11,6 +11,7 @@
 		<script src="src/js/threejs/loaders/MTLLoader.js"></script>
 		<script src="src/js/threejs/loaders/OBJLoader.js"></script>
 		<script src="src/js/threejs/loaders/OBJMTLLoader.js"></script>
+		<script src="src/js/threejs/shaders/FresnelShader.js"></script>
 		<script src="src/js/threejs/controls/PointerLockControls.js"></script>
 		<script src="src/js/threejs/libs/stats.min.js"></script>
 
@@ -101,7 +102,7 @@
 				  path_to_folder + 'back.png', // back
 				];
 
-				cubemap = THREE.ImageUtils.loadTextureCube(urls); // load textures
+				cubemap = THREE.ImageUtils.loadTextureCube(urls, new THREE.CubeRefractionMapping() ); // load textures
 				cubemap.format = THREE.RGBFormat;
 
 				var shader = THREE.ShaderLib['cube']; // init cube shader from built-in lib
@@ -147,7 +148,7 @@
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				// lights
 				////////////////////////////////////////////////////////////////////////////////////////////////
-      			//makePointLights( 17, 0x999999 );
+      			makePointLights( 17, 0x999999 );
 
       			function makePointLights( height, color )
       			{
@@ -192,29 +193,29 @@
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				// floor
 				////////////////////////////////////////////////////////////////////////////////////////////////
-				//createFloor();
+				createFloor();
 
 				function createFloor()
 				{
 					var geometry = new THREE.PlaneGeometry( 100, 100, 1, 1 );
 					geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
 
-					var texture = THREE.ImageUtils.loadTexture('src/textures/terrain/grasslight-big.jpg');
-					//var texture = THREE.ImageUtils.loadTexture('src/textures/ground/wood_diffuse.jpg');
+					//var texture = THREE.ImageUtils.loadTexture('src/textures/terrain/grasslight-big.jpg');
+					var texture = THREE.ImageUtils.loadTexture('src/models/flat/tex/wooden_floor.jpg');
 					texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-					texture.repeat.set( 4, 4 );
+					texture.repeat.set( 6, 6 );
 					
-					var texture_normal = THREE.ImageUtils.loadTexture('src/textures/terrain/grasslight-big-nm.jpg');
+					//var texture_normal = THREE.ImageUtils.loadTexture('src/textures/terrain/grasslight-big-nm.jpg');
 					//var texture_normal = THREE.ImageUtils.loadTexture('src/textures/ground/wood_normal.jpg');
-					texture_normal.wrapS = texture_normal.wrapT = THREE.RepeatWrapping;
-					texture_normal.repeat.set( 4, 4 );
+					//texture_normal.wrapS = texture_normal.wrapT = THREE.RepeatWrapping;
+					//texture_normal.repeat.set( 4, 4 );
 					
 					var material = new THREE.MeshPhongMaterial({ 
 						shininess: 2, 
 						specular: 0x111111,
 						shading: THREE.SmoothShading,
 						map: texture,
-						normalMap: texture_normal,
+						//normalMap: texture_normal,
 						wireframe: false
 					});
 
@@ -230,7 +231,7 @@
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				// ceiling
 				////////////////////////////////////////////////////////////////////////////////////////////////
-				//createCeiling();
+				createCeiling();
 
 				function createCeiling()
 				{
@@ -238,7 +239,7 @@
 					geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
 
 					var material = new THREE.MeshPhongMaterial({ 
-						specular: 0x111111,
+						specular: 0xFFFFFF,
 						shading: THREE.SmoothShading,
 						side: THREE.DoubleSide,
 						wireframe: false
@@ -248,7 +249,47 @@
 					mesh.receiveShadow = true;
 					mesh.castShadow = false;
 					mesh.flipSided = false;
-					mesh.position.set( 0, 19, 0 );
+					mesh.position.set( 0, 18.5, 0 );
+					scene.add( mesh );
+					objects.push( mesh );
+				}
+
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				// window
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				createWindow();
+
+				function createWindow()
+				{
+					var geometry = new THREE.PlaneGeometry( 100, 20, 1, 1 );
+					//geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
+
+					// Test FresnelShader on window
+					/*var shader = THREE.FresnelShader;
+					var uniforms = THREE.UniformsUtils.clone( shader.uniforms );
+					uniforms[ 'tCube' ].value = cubemap;
+					var parameters = {
+						fragmentShader: shader.fragmentShader, 
+						vertexShader: shader.vertexShader,
+						uniforms: uniforms
+					};
+					var material = new THREE.ShaderMaterial( parameters );*/
+
+					// Test Refraction Map
+					var material = new THREE.MeshBasicMaterial({
+						color: 0xFFFFFF,
+						envMap: cubemap,
+						refractionRatio: 0.985,
+						transparent: true,
+						opacity: 0.050
+					});
+
+					var mesh = new THREE.Mesh( geometry, material );
+					mesh.receiveShadow = true;
+					mesh.castShadow = false;
+					mesh.flipSided = false;
+					mesh.position.set( 49.5, 10, 0 );
+					mesh.rotation.y = - Math.PI * 90 / 180;
 					scene.add( mesh );
 					objects.push( mesh );
 				}
@@ -256,9 +297,9 @@
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				// objects
 				////////////////////////////////////////////////////////////////////////////////////////////////
-				addJsonOBJ( 'src/models/flat.js', 0, 0, 0, 10, 0);
+				addJsonOBJ( 'src/models/flat/flat.js', 0, 0, 0, 10, 0);
 				
-				var reflectionMaterial = new THREE.MeshBasicMaterial({
+				/*var reflectionMaterial = new THREE.MeshBasicMaterial({
 		          color: 0xCCCCCC,
 		          envMap: cubemap
 		        });
@@ -269,7 +310,7 @@
 		        );
 
 		        sphere.position.set(25,5,0);
-		        scene.add(sphere);
+		        scene.add(sphere);*/
 				
 				//objects[2].material.materials[0].wireframe = true
 				function addJsonOBJ( path, x, y, z, scale, angle)
@@ -335,7 +376,7 @@
 				renderer.render(scene, camera);
 				time = Date.now();
 
-				if (controls.getObject().position.x > 50) {
+				/*if (controls.getObject().position.x > 50) {
 					controls.getObject().position.y -=  1 + Math.abs(controls.getObject().position.y / 10);
 					controls.enabled = false;
 					if (controls.getObject().position.y < -1500) {
@@ -344,7 +385,7 @@
 						controls.getObject().position.y = 0;
 						controls.enabled = true;
 					}
-				}
+				}*/
 				requestAnimationFrame(animate);
 			}
 
