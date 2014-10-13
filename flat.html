@@ -15,6 +15,7 @@
 		<script src="src/js/threejs/controls/PointerLockControls.js"></script>
 		<script src="src/js/threejs/libs/stats.min.js"></script>
 
+		<div id="crosshair"></div>
 		<div id="blocker">
 
 			<div id="instructions">
@@ -33,9 +34,14 @@
 			var time;
 			var skybox;
 			var cubemap;
-			var sphere;
 
 			var objects = [];
+			var interactions = [];
+
+			// Toggle Lights
+			var sphere;
+			var debug_point_light;
+			var debug_spot_light;
 
 			var player = new THREE.Object3D();
 			var rays = [
@@ -48,7 +54,6 @@
 			    new THREE.Vector3(-1, 0, 0),
 			    new THREE.Vector3(-1, 0, 1)
 		    ];
-
 		    var caster = new THREE.Raycaster();
 
 			var blocker = document.getElementById( 'blocker' );
@@ -107,7 +112,7 @@
 						skybox_material.wireframe = true;	
 					}
 										
-					skybox = new THREE.Mesh( new THREE.CubeGeometry( size, size, size ), skybox_material );
+					skybox = new THREE.Mesh( new THREE.BoxGeometry( size, size, size ), skybox_material );
 					scene.add(skybox);	
 				}
 				
@@ -115,7 +120,7 @@
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				// directional light
 				////////////////////////////////////////////////////////////////////////////////////////////////
-				makeSun( new THREE.Vector3( 300, 180, 200 ), new THREE.Vector3( 0, 0, 0 ), 0xFFFFFF );
+				//makeSun( new THREE.Vector3( 300, 180, 200 ), new THREE.Vector3( 0, 0, 0 ), 0xFFFFFF );
 				
 				function makeSun( position, target, color, debug ) 
 				{
@@ -138,7 +143,7 @@
 					// Debug mode
 					debug = typeof debug !== 'undefined' ? debug : false;
 					if ( debug === true ) {
-						directional_light.shadowCameraVisible = true;	
+						directional_light.shadowCameraVisible = true;
 					}
 				}
 
@@ -161,21 +166,23 @@
 					scene.add( light );
 
 					// Spot Light
-					var spotLight = new THREE.SpotLight( color );
-					spotLight.position.set( x, z, y );
-					spotLight.target.position.set( x, 0, y );
-					spotLight.castShadow = true;
-					spotLight.shadowMapWidth = spotLight.shadowMapHeight = 1024;
-					spotLight.shadowCameraNear = 1;
-					spotLight.shadowCameraFar = z;
-					spotLight.shadowCameraFov = 40;
-					scene.add( spotLight );
+					var spot_light = new THREE.SpotLight( color );
+					spot_light.position.set( x, z, y );
+					spot_light.target.position.set( x, 0, y );
+					spot_light.castShadow = true;
+					spot_light.shadowMapWidth = spot_light.shadowMapHeight = 1024;
+					spot_light.shadowCameraNear = 1;
+					spot_light.shadowCameraFar = z;
+					spot_light.shadowCameraFov = 40;
+					scene.add( spot_light );
 
 					// Debug mode
 					debug = typeof debug !== 'undefined' ? debug : false;
 					if ( debug === true ) {
 						scene.add( new THREE.PointLightHelper( light, 1 ) );
-						spotLight.shadowCameraVisible = true;
+						spot_light.shadowCameraVisible = true;
+						debug_point_light = light;
+						debug_spot_light = spot_light;
 					}
       			}
 
@@ -257,20 +264,6 @@
 				function createWindow()
 				{
 					var geometry = new THREE.PlaneGeometry( 100, 20, 1, 1 );
-					//geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
-
-					// Test FresnelShader on window
-					/*var shader = THREE.FresnelShader;
-					var uniforms = THREE.UniformsUtils.clone( shader.uniforms );
-					uniforms[ 'tCube' ].value = cubemap;
-					var parameters = {
-						fragmentShader: shader.fragmentShader, 
-						vertexShader: shader.vertexShader,
-						uniforms: uniforms
-					};
-					var material = new THREE.ShaderMaterial( parameters );*/
-
-					// Test Refraction Map
 					var material = new THREE.MeshBasicMaterial({
 						color: 0xFFFFFF,
 						envMap: cubemap,
@@ -293,7 +286,6 @@
 				// objects
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				addJsonOBJ( 'src/models/flat/flat_walls.js', 0, 0, 0, 10, 0);
-				
 				testBall();
 				
 				function testBall()
@@ -310,6 +302,14 @@
 
 					sphere.position.set( 25, 5, 0);
 					scene.add( sphere );
+
+					sphere.toggleLight = function() {
+						if ( debug_spot_light.intensity == 0 || debug_point_light.intensity == 0 ) {
+							debug_spot_light.intensity = debug_point_light.intensity = 2.5;
+						} else {
+							debug_spot_light.intensity = debug_point_light.intensity = 0;
+						}
+					}
 				}
 				
 				function addJsonOBJ( path, x, y, z, scale, angle)
@@ -354,6 +354,7 @@
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				document.body.appendChild( renderer.domElement );
 				window.addEventListener( 'resize', onWindowResize, false );
+				window.addEventListener( "click", onWindowClick, false );
 			}
 
 			function onWindowResize() 
@@ -362,6 +363,25 @@
 				camera.updateProjectionMatrix();
 				renderer.setSize( window.innerWidth, window.innerHeight );
 			}
+
+            function onWindowClick( event )
+            {
+            	interactionObject();
+            }
+
+            function interactionObject( )
+            {
+				var raycaster = new THREE.Raycaster();
+				raycaster.set( controls.getObject().position, controls.getDirection( new THREE.Vector3( 0, 0, 0 ) ) );
+
+				var intersects = raycaster.intersectObject( sphere );
+
+				if ( intersects.length > 0 ) {
+					var intersect = intersects[ 0 ];
+					var object = intersect.object;
+					object.toggleLight();
+				}
+            }
 
 			function animate()
 			{
@@ -434,25 +454,16 @@
 
 				var collisions, i;
 
-				//sphere.material.
-
-				//var rayCaster = new THREE.Raycaster(controls.getObject().position, cameraDirection);
-				//for (i = 0; i < objects.length; i++) {
 				for ( i = 0; i < rays.length; i++ ) {
-
 					// We reset the raycaster to this direction
-			        //caster.set(player.position, this.rays[i]);
 			        caster.set(controls.getObject().position, cameraDirection);
 			        // Test if we intersect with any obstacle mesh
 			        collisions = caster.intersectObjects(objects);
 
-					//var intersects = rayCaster.intersectObject(objects[i], true);	
-					
-					//if (intersects.length > 0 && intersects[0].distance < DISTANCE) {
 					if (collisions.length > 0 && collisions[0].distance <= DISTANCE) {
 						lockDirections();
 						console.log("Collision detected @ " + collisions[0].distance);	
-					} 
+					}
 				}
 			}
 
@@ -484,90 +495,53 @@
 			function pointerLockInit()
 			{
 				// http://www.html5rocks.com/en/tutorials/pointerlock/intro/
-
 				var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
-
 				if ( havePointerLock ) {
-
 					var element = document.body;
-
 					var pointerlockchange = function ( event ) {
-
 						if ( document.pointerLockElement === element || document.mozPointerLockElement === element || document.webkitPointerLockElement === element ) {
-
 							controls.enabled = true;
-
 							blocker.style.display = 'none';
-
 						} else {
-
 							controls.enabled = false;
-
 							blocker.style.display = '-webkit-box';
 							blocker.style.display = '-moz-box';
 							blocker.style.display = 'box';
-
 							instructions.style.display = '';
-
 						}
-
 					}
-
 					var pointerlockerror = function ( event ) {
-
 						instructions.style.display = '';
-
 					}
-
 					// Hook pointer lock state change events
 					document.addEventListener( 'pointerlockchange', pointerlockchange, false );
 					document.addEventListener( 'mozpointerlockchange', pointerlockchange, false );
 					document.addEventListener( 'webkitpointerlockchange', pointerlockchange, false );
-
 					document.addEventListener( 'pointerlockerror', pointerlockerror, false );
 					document.addEventListener( 'mozpointerlockerror', pointerlockerror, false );
 					document.addEventListener( 'webkitpointerlockerror', pointerlockerror, false );
-
 					instructions.addEventListener( 'click', function ( event ) {
-
 						instructions.style.display = 'none';
-
 						// Ask the browser to lock the pointer
 						element.requestPointerLock = element.requestPointerLock || element.mozRequestPointerLock || element.webkitRequestPointerLock;
-
 						if ( /Firefox/i.test( navigator.userAgent ) ) {
-
 							var fullscreenchange = function ( event ) {
-
 								if ( document.fullscreenElement === element || document.mozFullscreenElement === element || document.mozFullScreenElement === element ) {
-
 									document.removeEventListener( 'fullscreenchange', fullscreenchange );
 									document.removeEventListener( 'mozfullscreenchange', fullscreenchange );
-
 									element.requestPointerLock();
 								}
-
 							}
-
 							document.addEventListener( 'fullscreenchange', fullscreenchange, false );
 							document.addEventListener( 'mozfullscreenchange', fullscreenchange, false );
-
 							element.requestFullscreen = element.requestFullscreen || element.mozRequestFullscreen || element.mozRequestFullScreen || element.webkitRequestFullscreen;
-
 							element.requestFullscreen();
-
 						} else {
-
 							element.requestPointerLock();
-
 						}
-
 					}, false );
-
 				} else {
-
 					instructions.innerHTML = 'Your browser doesn\'t seem to support Pointer Lock API';
-
 				}
 			}
 
