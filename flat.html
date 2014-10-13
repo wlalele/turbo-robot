@@ -148,38 +148,38 @@
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				// lights
 				////////////////////////////////////////////////////////////////////////////////////////////////
-      			makePointLights( 17, 0x999999 );
+      			makePointLights( 17, 0x999999, 2.5, 100 );
 
-      			function makePointLights( height, color )
+      			function makePointLights( height, color, intensity, distance )
       			{
 	      			//Red Light
-	      			var light = new THREE.PointLight( color, 1, 100 );
+	      			var light = new THREE.PointLight( color, intensity, distance );
 					light.position.set( 30, height, 0 );
 					scene.add( light );
 					//Red Light
-	      			var light = new THREE.PointLight( color, 1, 100 );
+	      			var light = new THREE.PointLight( color, intensity, distance );
 					light.position.set( 30, height, 30 );
 					scene.add( light );
 					//Red Light
-	      			var light = new THREE.PointLight( color, 1, 100 );
+	      			var light = new THREE.PointLight( color, intensity, distance );
 					light.position.set( 30, height, -30 );
 					scene.add( light );
 					
 					//Green Light
-					var light = new THREE.PointLight( color, 1, 100 );
+					var light = new THREE.PointLight( color, intensity, distance );
 					light.position.set( 0, height, 0 );
 					scene.add( light );
 
 					//Blue Light
-					var light = new THREE.PointLight( color, 1, 100 );
+					var light = new THREE.PointLight( color, intensity, distance );
 					light.position.set( -30, height, 0 );
 					scene.add( light );
 					//Blue Light
-					var light = new THREE.PointLight( color, 1, 100 );
+					var light = new THREE.PointLight( color, intensity, distance );
 					light.position.set( -30, height, 30 );
 					scene.add( light );
 					//Blue Light
-					var light = new THREE.PointLight( color, 1, 100 );
+					var light = new THREE.PointLight( color, intensity, distance );
 					light.position.set( -30, height, -30 );
 					scene.add( light );
       			}
