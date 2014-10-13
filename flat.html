@@ -294,20 +294,24 @@
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				addJsonOBJ( 'src/models/flat/flat_walls.js', 0, 0, 0, 10, 0);
 				
-				/*var reflectionMaterial = new THREE.MeshBasicMaterial({
-		          color: 0xCCCCCC,
-		          envMap: cubemap
-		        });
-
-		        sphere = new THREE.Mesh(
-		          new THREE.SphereGeometry(2,32,32),
-		          reflectionMaterial
-		        );
-
-		        sphere.position.set(25,5,0);
-		        scene.add(sphere);*/
+				testBall();
 				
-				//objects[2].material.materials[0].wireframe = true
+				function testBall()
+				{
+					var reflection_material = new THREE.MeshBasicMaterial({
+						color: 0xCCCCCC,
+						envMap: cubemap
+					});
+
+					sphere = new THREE.Mesh(
+						new THREE.SphereGeometry(2,32,32),
+						reflection_material
+					);
+
+					sphere.position.set( 25, 5, 0);
+					scene.add( sphere );
+				}
+				
 				function addJsonOBJ( path, x, y, z, scale, angle)
 				{
 					var loader = new THREE.JSONLoader();
@@ -371,16 +375,18 @@
 				renderer.render(scene, camera);
 				time = Date.now();
 
-				/*if (controls.getObject().position.x > 50) {
-					controls.getObject().position.y -=  1 + Math.abs(controls.getObject().position.y / 10);
+				// Falling Motion
+				if ( controls.getObject().position.x > 50 ) {
+					controls.getObject().position.y -=  1 + Math.abs( controls.getObject().position.y / 10 );
 					controls.enabled = false;
-					if (controls.getObject().position.y < -1500) {
-						renderer.setClearColor(0xff0000, 1);
+					if ( controls.getObject().position.y < -1500 ) {
+						renderer.setClearColor( 0xff0000, 1 );
 						controls.getObject().position.x = 0;
 						controls.getObject().position.y = 0;
 						controls.enabled = true;
 					}
-				}*/
+				}
+
 				requestAnimationFrame(animate);
 			}
 
