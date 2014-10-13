@@ -29,10 +29,10 @@
 			var DISTANCE = 6;
 			var camera, scene, renderer, stats;
 			var controls;
-			var directional_light;
+			var sunlight;
 			var time;
 			var skybox;
-			var cubemap ;
+			var cubemap;
 			var sphere;
 
 			var objects = [];
@@ -74,114 +74,109 @@
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				// skybox
 				////////////////////////////////////////////////////////////////////////////////////////////////
-				//var skybox_geometry = new THREE.SphereGeometry( 200, 32, 32 ); // box 500 500 500
-				/*var skybox_geometry = new THREE.CylinderGeometry( 5, 5, 20, 32 ); // box 500 500 500
-				var skybox_texture = THREE.ImageUtils.loadTexture('src/textures/skybow.jpg');
-				//var skybox_texture = THREE.ImageUtils.loadTexture('src/textures/skybox.jpg');
-				var skybox_material = new THREE.MeshBasicMaterial({
-					color: 0x9999ff,
-					side: THREE.BackSide,
-					map: skybox_texture,
-					wireframe: false
-				});
-				skybox = new THREE.Mesh( skybox_geometry, skybox_material );
-				skybox.scale.set( 25, 25, 25 );
-				skybox.rotation.y = 30;
-				skybox.position.set( 0, 60, 0 );
-				scene.add(skybox);*/
+				makeSkybox( 'src/textures/skybox/', 1500 );
 
-				var path_to_folder = 'src/textures/skybox/';
-				var urls = [
-				  path_to_folder + 'right.png', // right
-				  path_to_folder + 'left.png', // left
-				  
-				  path_to_folder + 'top.png', // top
-				  path_to_folder + 'bottom.png', // bottom
-				  
-				  path_to_folder + 'front.png', // front
-				  path_to_folder + 'back.png', // back
-				];
+				function makeSkybox( path, size, debug )
+				{
+					var urls = [
+					  path + 'right.png',
+					  path + 'left.png',
+					  path + 'top.png',
+					  path + 'bottom.png',
+					  path + 'front.png',
+					  path + 'back.png',
+					];
 
-				cubemap = THREE.ImageUtils.loadTextureCube(urls, new THREE.CubeRefractionMapping() ); // load textures
-				cubemap.format = THREE.RGBFormat;
+					cubemap = THREE.ImageUtils.loadTextureCube(urls, new THREE.CubeRefractionMapping() );
+					cubemap.format = THREE.RGBFormat;
 
-				var shader = THREE.ShaderLib['cube']; // init cube shader from built-in lib
-				shader.uniforms['tCube'].value = cubemap; // apply textures to shader*/
+					var shader = THREE.ShaderLib['cube'];
+					shader.uniforms['tCube'].value = cubemap;
 
-				// create shader material
-				var skyBoxMaterial = new THREE.ShaderMaterial( {
-				  fragmentShader: shader.fragmentShader,
-				  vertexShader: shader.vertexShader,
-				  uniforms: shader.uniforms,
-				  depthWrite: false,
-				  side: THREE.BackSide
-				});
+					var skybox_material = new THREE.ShaderMaterial( {
+					  fragmentShader: shader.fragmentShader,
+					  vertexShader: shader.vertexShader,
+					  uniforms: shader.uniforms,
+					  depthWrite: false,
+					  side: THREE.BackSide
+					});
+
+					// Debug mode
+					debug = typeof debug !== 'undefined' ? debug : false;
+					if ( debug === true ) {
+						skybox_material.wireframe = true;	
+					}
+										
+					skybox = new THREE.Mesh( new THREE.CubeGeometry( size, size, size ), skybox_material );
+					scene.add(skybox);	
+				}
 				
-				// create skybox mesh
-				skybox = new THREE.Mesh(
-				  new THREE.CubeGeometry(1500, 1500, 1500),
-				  skyBoxMaterial
-				);
-				skybox.position.y = 0;
-				scene.add(skybox);
 
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				// directional light
 				////////////////////////////////////////////////////////////////////////////////////////////////
-				directional_light = new THREE.DirectionalLight( 0xFFFFFF );
-				directional_light.position.set( 300, 180, 200 );
-				directional_light.target.position.set( 0, 0, 0 );
-				directional_light.castShadow = true;
-				directional_light.shadowDarkness = 0.5;
-				//directional_light.shadowCameraVisible = true;
+				makeSun( new THREE.Vector3( 300, 180, 200 ), new THREE.Vector3( 0, 0, 0 ), 0xFFFFFF );
+				
+				function makeSun( position, target, color, debug ) 
+				{
+					// Directional Light
+					var directional_light = new THREE.DirectionalLight( color );
+					directional_light.position = position;
+					directional_light.target.position = target;					
+					directional_light.castShadow = true;
+					directional_light.shadowDarkness = 0.5;
+					directional_light.shadowMapWidth = directional_light.shadowMapHeight = 2048;
+				    directional_light.shadowCameraNear = 325;
+				    directional_light.shadowCameraFar = 480;
+				    directional_light.shadowCameraLeft = -80;
+				    directional_light.shadowCameraRight = 80;
+				    directional_light.shadowCameraTop = 60;
+				    directional_light.shadowCameraBottom = -35;
+					scene.add( directional_light );
+					sunlight = directional_light;
 
-				directional_light.shadowMapWidth = directional_light.shadowMapHeight = 2048;
-			    directional_light.shadowCameraNear = 325;
-			    directional_light.shadowCameraFar = 480;
-			    directional_light.shadowCameraLeft = -80;
-			    directional_light.shadowCameraRight = 80;
-			    directional_light.shadowCameraTop = 60;
-			    directional_light.shadowCameraBottom = -35;
-
-				scene.add( directional_light );
+					// Debug mode
+					debug = typeof debug !== 'undefined' ? debug : false;
+					if ( debug === true ) {
+						directional_light.shadowCameraVisible = true;	
+					}
+				}
 
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				// lights
 				////////////////////////////////////////////////////////////////////////////////////////////////
-      			makePointLights( 17, 0x999999, 2.5, 100 );
+      			makeLight( 30, 0, 18, 0x999999, 2.5, 80, true);
+      			makeLight( 30, 30, 18, 0x999999, 2.5, 80);
+      			makeLight( 30, -30, 18, 0x999999, 2.5, 80);
+      			makeLight( 0, 0, 18, 0x999999, 2.5, 80);
+      			makeLight( -30, 0, 18, 0x999999, 2.5, 80);
+      			makeLight( -30, -30, 18, 0x999999, 2.5, 80);
+      			makeLight( -30, 30, 18, 0x999999, 2.5, 80);
 
-      			function makePointLights( height, color, intensity, distance )
+      			function makeLight( x, y, z, color, intensity, distance, debug )
       			{
-	      			//Red Light
+	      			// Point Light
 	      			var light = new THREE.PointLight( color, intensity, distance );
-					light.position.set( 30, height, 0 );
-					scene.add( light );
-					//Red Light
-	      			var light = new THREE.PointLight( color, intensity, distance );
-					light.position.set( 30, height, 30 );
-					scene.add( light );
-					//Red Light
-	      			var light = new THREE.PointLight( color, intensity, distance );
-					light.position.set( 30, height, -30 );
-					scene.add( light );
-					
-					//Green Light
-					var light = new THREE.PointLight( color, intensity, distance );
-					light.position.set( 0, height, 0 );
+					light.position.set( x, z, y );
 					scene.add( light );
 
-					//Blue Light
-					var light = new THREE.PointLight( color, intensity, distance );
-					light.position.set( -30, height, 0 );
-					scene.add( light );
-					//Blue Light
-					var light = new THREE.PointLight( color, intensity, distance );
-					light.position.set( -30, height, 30 );
-					scene.add( light );
-					//Blue Light
-					var light = new THREE.PointLight( color, intensity, distance );
-					light.position.set( -30, height, -30 );
-					scene.add( light );
+					// Spot Light
+					var spotLight = new THREE.SpotLight( color );
+					spotLight.position.set( x, z, y );
+					spotLight.target.position.set( x, 0, y );
+					spotLight.castShadow = true;
+					spotLight.shadowMapWidth = spotLight.shadowMapHeight = 1024;
+					spotLight.shadowCameraNear = 1;
+					spotLight.shadowCameraFar = z;
+					spotLight.shadowCameraFov = 40;
+					scene.add( spotLight );
+
+					// Debug mode
+					debug = typeof debug !== 'undefined' ? debug : false;
+					if ( debug === true ) {
+						scene.add( new THREE.PointLightHelper( light, 1 ) );
+						spotLight.shadowCameraVisible = true;
+					}
       			}
 
 				////////////////////////////////////////////////////////////////////////////////////////////////
@@ -297,7 +292,7 @@
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				// objects
 				////////////////////////////////////////////////////////////////////////////////////////////////
-				addJsonOBJ( 'src/models/flat/flat.js', 0, 0, 0, 10, 0);
+				addJsonOBJ( 'src/models/flat/flat_walls.js', 0, 0, 0, 10, 0);
 				
 				/*var reflectionMaterial = new THREE.MeshBasicMaterial({
 		          color: 0xCCCCCC,
