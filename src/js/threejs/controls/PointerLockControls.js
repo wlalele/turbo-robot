@@ -149,7 +149,7 @@ THREE.PointerLockControls = function ( camera ) {
 
 		if ( scope.enabled === false ) return;
 		
-		delta *= 0.1;
+		delta *= 100;
 
 		velocity.x += ( - velocity.x ) * 0.1 * delta;
 		velocity.z += ( - velocity.z ) * 0.1 * delta;
