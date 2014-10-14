@@ -12,6 +12,7 @@
 		<script src="src/js/threejs/loaders/OBJLoader.js"></script>
 		<script src="src/js/threejs/loaders/OBJMTLLoader.js"></script>
 		<script src='src/js/threejs/MD2Character.js'></script>
+		<script src='src/js/threejs/MD2CharacterComplex.js'></script>
 		<script src="src/js/threejs/controls/PointerLockControls.js"></script>
 		<script src="src/js/threejs/libs/stats.min.js"></script>
 
@@ -318,15 +319,17 @@
 						crouchSpeed: 175
 					};
 
-					character = new THREE.MD2Character();
+					character = new THREE.MD2CharacterComplex();
+					character.controls = camera_controls;
 					character.scale = 0.22;
 
-					character.controls = camera_controls;
+					character.onLoadComplete = function () {
+						character.setSkin( 0 );					
+						character.root.position.set( 0, 6, 0);
+						scene.add( character.root );
+					};
 
 					character.loadParts( config );
-					character.root.position.set( 0, 6, 0);
-					scene.add( character.root );
-
 				}
 
 				function testBall()
@@ -430,17 +433,19 @@
 
 				var delta = clock.getDelta();
 				camera_controls.update(delta);
-				character.update(delta);
 
-				if (camera_controls.enabled === true) {
+				if (camera_controls.enabled === true) character.update(delta);
+
+				// MD2Character.js
+				/*if (camera_controls.enabled === true) {
 					character.updateMoves( camera_controls.getObject().position, camera_controls.getObject().rotation );
-				}
+				}*/
 
 				stats.update();
 				renderer.render(scene, camera);
 
 				// Falling Motion
-				if ( camera_controls.getObject().position.x > 50 ) {
+				/*if ( camera_controls.getObject().position.x > 50 ) {
 					camera_controls.getObject().position.y -=  1 + Math.abs( camera_controls.getObject().position.y / 10 );
 					camera_controls.enabled = false;
 					if ( camera_controls.getObject().position.y < -1500 ) {
@@ -449,7 +454,7 @@
 						camera_controls.getObject().position.y = 0;
 						camera_controls.enabled = true;
 					}
-				}
+				}*/
 
 				requestAnimationFrame(animate);
 			}

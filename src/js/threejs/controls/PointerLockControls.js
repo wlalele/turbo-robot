@@ -19,6 +19,12 @@ THREE.PointerLockControls = function ( camera ) {
 	var moveBackward = false;
 	var moveLeft = false;
 	var moveRight = false;
+
+	//MD2 Complex
+	var crouch = false;
+	var jump = false;
+	var attack = false;
+	//
 	
 	var lockMoveForward = false;
 	var lockMoveBackward = false;
@@ -72,7 +78,10 @@ THREE.PointerLockControls = function ( camera ) {
 
 			case 32: // space
 			case 17: // control
-				if ( canJump === true ) velocity.y += 5;
+				if ( canJump === true ) { 
+					velocity.y += 1;
+					jump = true;
+				}
 				canJump = false;
 				break;
 
@@ -177,6 +186,7 @@ THREE.PointerLockControls = function ( camera ) {
 			yawObject.position.y = 10;
 
 			canJump = true;
+			jump = false;
 		}
 
 	};
@@ -213,5 +223,15 @@ THREE.PointerLockControls = function ( camera ) {
 	
 	this.lockMoveRight = function(boolean){
 		lockMoveRight = boolean;
+	};
+
+	this.crouch = function() {
+		return crouch;
+	};
+	this.jump = function() {
+		return jump;
+	};
+	this.attack = function() {
+		return attack;
 	};
 };
