@@ -27,7 +27,7 @@
 		<script>
 			var clock = new THREE.Clock();
 
-			var DISTANCE = 8;
+			var DISTANCE = 10;
 			var LIGHT_INTENSITY = 2.5;
 			var camera, scene, renderer, stats;
 			var camera_controls;
@@ -88,12 +88,12 @@
 				function makeSkybox( path, size, debug )
 				{
 					var urls = [
-					  path + 'right.png',
-					  path + 'left.png',
-					  path + 'top.png',
-					  path + 'bottom.png',
-					  path + 'front.png',
-					  path + 'back.png',
+					  path + 'right.jpg',
+					  path + 'left.jpg',
+					  path + 'top.jpg',
+					  path + 'bottom.jpg',
+					  path + 'front.jpg',
+					  path + 'back.jpg',
 					];
 
 					cubemap = THREE.ImageUtils.loadTextureCube(urls, new THREE.CubeRefractionMapping() );
