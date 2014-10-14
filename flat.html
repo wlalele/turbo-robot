@@ -8,9 +8,6 @@
 	<body>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
 		<script src="src/js/three.min.js"></script>
-		<script src="src/js/threejs/loaders/MTLLoader.js"></script>
-		<script src="src/js/threejs/loaders/OBJLoader.js"></script>
-		<script src="src/js/threejs/loaders/OBJMTLLoader.js"></script>
 		<script src='src/js/threejs/MD2Character.js'></script>
 		<script src='src/js/threejs/MD2CharacterComplex.js'></script>
 		<script src="src/js/threejs/controls/PointerLockControls.js"></script>
@@ -31,7 +28,7 @@
 			var clock = new THREE.Clock();
 
 			var DISTANCE = 8;
-			var LIGHT_INTENSITY = 1.5;
+			var LIGHT_INTENSITY = 2.5;
 			var camera, scene, renderer, stats;
 			var camera_controls;
 			var sunlight;
@@ -40,7 +37,6 @@
 			var cubemap;
 
 			var objects = [];
-			var interactions = [];
 
 			// Toggle Lights
 			var sphere;
@@ -159,10 +155,10 @@
 				// lights
 				////////////////////////////////////////////////////////////////////////////////////////////////
       			makeLight( 30, 0, 18, 0x999999, LIGHT_INTENSITY, 80, true);
-      			makeLight( 30, 30, 18, 0x999999, LIGHT_INTENSITY, 80);
-      			makeLight( 30, -30, 18, 0x999999, LIGHT_INTENSITY, 80);
-      			makeLight( 0, 0, 18, 0x999999, LIGHT_INTENSITY, 80);
-      			makeLight( -30, 0, 18, 0x999999, LIGHT_INTENSITY, 80);
+      			//makeLight( 30, 30, 18, 0x999999, LIGHT_INTENSITY, 80);
+      			//makeLight( 30, -30, 18, 0x999999, LIGHT_INTENSITY, 80);
+      			//makeLight( 0, 0, 18, 0x999999, LIGHT_INTENSITY, 80);
+      			//makeLight( -30, 0, 18, 0x999999, LIGHT_INTENSITY, 80);
       			makeLight( -30, -30, 18, 0x999999, LIGHT_INTENSITY, 80);
       			makeLight( -30, 30, 18, 0x999999, LIGHT_INTENSITY, 80);
 
@@ -385,15 +381,14 @@
 				// renderer
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				renderer = new THREE.WebGLRenderer({ antialias: true });
-				renderer.shadowMapEnabled = true;
+				/*renderer.shadowMapEnabled = true;
 				renderer.shadowMapSoft = true;
 				renderer.shadowCameraNear = 3;
 				renderer.shadowCameraFar = camera.far;
 				renderer.shadowCameraFov = 50;
 				renderer.shadowMapBias = 0.0039;
 				renderer.shadowMapDarkness = 0.5;
-				renderer.shadowMapWidth = 1024;
-				renderer.shadowMapHeight = 1024;
+				renderer.shadowMapWidth = renderer.shadowMapHeight = 1024;*/
 				renderer.setClearColor( 0xffffff );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				document.body.appendChild( renderer.domElement );
