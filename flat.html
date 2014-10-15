@@ -321,7 +321,8 @@
 
 					character.onLoadComplete = function () {
 						character.setSkin( 0 );					
-						character.root.position.set( 0, 6, 0);
+						character.root.position.set( 0, 5, 0);
+						character.meshBody.rotation.y = Math.PI * 90 / 180;
 						scene.add( character.root );
 					};
 
@@ -429,12 +430,7 @@
 				var delta = clock.getDelta();
 				camera_controls.update(delta);
 
-				if (camera_controls.enabled === true) character.update(delta);
-
-				// MD2Character.js
-				/*if (camera_controls.enabled === true) {
-					character.updateMoves( camera_controls.getObject().position, camera_controls.getObject().rotation );
-				}*/
+				if (character.meshBody !== null) character.update(delta);
 
 				stats.update();
 				renderer.render(scene, camera);

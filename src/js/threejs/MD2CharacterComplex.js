@@ -441,8 +441,9 @@ THREE.MD2CharacterComplex = function () {
 
 	this.updateMoves = function ( object ) {
 
-		this.root.position.set( object.position.x, 6, object.position.z);
-		this.meshBody.rotation.set( 0, object.rotation.y + Math.PI * 90 / 180, 0 );
+		this.root.position.x = object.position.x;
+		this.root.position.z = object.position.z;
+		this.meshBody.rotation.y = object.rotation.y + Math.PI * 90 / 180;
 
 	};
 
