@@ -246,12 +246,11 @@
 				function createCeiling()
 				{
 					var geometry = new THREE.PlaneGeometry( 100, 100, 1, 1 );
-					geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
+					geometry.applyMatrix( new THREE.Matrix4().makeRotationX( + Math.PI / 2 ) );
 
 					var material = new THREE.MeshPhongMaterial({ 
-						specular: 0xFFFFFF,
-						shading: THREE.SmoothShading,
-						side: THREE.DoubleSide,
+						color: 0xFFFFFF,
+						emissive: 0x222222,
 						wireframe: false
 					});
 
@@ -259,7 +258,7 @@
 					mesh.receiveShadow = true;
 					mesh.castShadow = false;
 					mesh.flipSided = false;
-					mesh.position.set( 0, 18.5, 0 );
+					mesh.position.set( 0, 19.2, 0 );
 					scene.add( mesh );
 					objects.push( mesh );
 				}
@@ -424,23 +423,15 @@
 				var delta = 0;
 
 				if ( event.wheelDelta !== undefined ) { // WebKit / Opera / Explorer 9
-
 					delta = event.wheelDelta;
-
 				} else if ( event.detail !== undefined ) { // Firefox
-
 					delta = - event.detail;
-
 				}
 
 				if ( delta > 0 ) {
-
 					if (camera.position.z > CAMERA_DISTANCE_MIN) camera.position.z -= 1;
-
 				} else {
-
 					if (camera.position.z < CAMERA_DISTANCE_MAX) camera.position.z += 1;
-
 				}
 			}
 
@@ -465,7 +456,7 @@
 				var delta = clock.getDelta();
 				camera_controls.update(delta);
 
-				if (character.meshBody !== null) character.update(delta);
+				if (character.root !== null) character.update(delta);
 
 				if (camera.position.z === 0) character.setVisible(false);
 				else character.setVisible(true);
