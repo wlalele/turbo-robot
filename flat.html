@@ -27,6 +27,9 @@
 		<script>
 			var clock = new THREE.Clock();
 
+			var CAMERA_DISTANCE_MAX = 13;
+			var CAMERA_DISTANCE_MIN = 0;
+
 			var DISTANCE = 10;
 			var LIGHT_INTENSITY = 2.5;
 			var camera, scene, renderer, stats;
@@ -292,7 +295,6 @@
 				////////////////////////////////////////////////////////////////////////////////////////////////
 				addJsonOBJ( 'src/models/flat/flat_walls.js', 0, 0, 0, 10, 0);
 				testBall();
-				
 				makeCharacter();
 
 				function makeCharacter()
@@ -301,7 +303,7 @@
 						baseUrl: "src/models/animated/ratamahatta/",
 						body: "ratamahatta.js",
 						skins: [ "ratamahatta.png" ],
-						weapons:  [  [ "weapon.js", "weapon.png" ]	],
+						weapons:  [  	],
 						animations: {
 							move: "run",
 							idle: "stand",
@@ -394,6 +396,14 @@
 				document.body.appendChild( renderer.domElement );
 				window.addEventListener( 'resize', onWindowResize, false );
 				window.addEventListener( "click", onWindowClick, false );
+				if (window.addEventListener) {
+					// IE9, Chrome, Safari, Opera
+					window.addEventListener("mousewheel", onMouseWheel, false);
+					// Firefox
+					window.addEventListener("DOMMouseScroll", onMouseWheel, false);
+				}
+				// IE 6/7/8
+				else window.attachEvent("onmousewheel", onMouseWheel);
 			}
 
 			function onWindowResize() 
@@ -407,6 +417,31 @@
             {
             	interactionObject();
             }
+
+			function onMouseWheel( event ) 
+			{
+				var delta = 0;
+
+				if ( event.wheelDelta !== undefined ) { // WebKit / Opera / Explorer 9
+
+					delta = event.wheelDelta;
+
+				} else if ( event.detail !== undefined ) { // Firefox
+
+					delta = - event.detail;
+
+				}
+
+				if ( delta > 0 ) {
+
+					if (camera.position.z > CAMERA_DISTANCE_MIN) camera.position.z -= 1;
+
+				} else {
+
+					if (camera.position.z < CAMERA_DISTANCE_MAX) camera.position.z += 1;
+
+				}
+			}
 
             function interactionObject()
             {
@@ -430,6 +465,9 @@
 				camera_controls.update(delta);
 
 				if (camera_controls.enabled === true) character.update(delta);
+
+				if (camera.position.z === 0) character.setVisible(false);
+				else character.setVisible(true);
 
 				// MD2Character.js
 				/*if (camera_controls.enabled === true) {
