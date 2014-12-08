@@ -443,7 +443,7 @@ THREE.MD2CharacterComplex = function () {
 
 		this.root.position.x = object.position.x;
 		this.root.position.z = object.position.z;
-		this.meshBody.rotation.y = object.rotation.y + Math.PI * 90 / 180;
+		this.root.rotation.y = object.rotation.y;
 
 	};
 
